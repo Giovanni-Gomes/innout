@@ -30,13 +30,15 @@
         </div>
     </div>
 
-    <form class="mt-5" action="point" method="get">
-        @csrf
-        <div class="input-group no-border">
-            <input type="text" name="forcedTime" class="form-control" placeholder="Informe a hora para simular o batimento">
-            <button class="btn btn-danger ml-3">
-                Simular Ponto
-            </button>
-        </div>
-    </form>
+    @if($allowDevTimeSimulation ?? false)
+        <form class="mt-5" action="point" method="get">
+            @csrf
+            <div class="input-group no-border">
+                <input type="text" name="forcedTime" class="form-control" placeholder="Informe a hora para simular o batimento (apenas desenvolvimento)">
+                <button type="submit" class="btn btn-danger ml-3">
+                    Simular Ponto
+                </button>
+            </div>
+        </form>
+    @endif
 </x-app-layout>

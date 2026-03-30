@@ -2,34 +2,39 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Exceptions\AppException;
 use App\Models\WorkingHours;
-use App\Models\User;
-use DateTime;
+use Illuminate\Support\Carbon;
 
 class DayRecords extends Controller
 {
-    public function index(){
-        $date = (new DateTime())->getTimestamp();
-        $today = strftime('%d de %B de %Y', $date);
+    public function index()
+    {
+        $today = Carbon::now()
+            ->locale(app()->getLocale())
+            ->isoFormat('D [de] MMMM [de] YYYY');
         $workingHours = WorkingHours::loadFromUserAndDate(auth()->user()->id, date('Y-m-d'));
-        return view('day_records', ['today' => $today, 'workingHours' => $workingHours]);
+
+        return view('day_records', [
+            'today' => $today,
+            'workingHours' => $workingHours,
+            'allowDevTimeSimulation' => app()->isLocal(),
+        ]);
     }
 
-    function point() {
+    public function point()
+    {
         $workingHours = WorkingHours::loadFromUserAndDate(auth()->user()->id, date('Y-m-d'));
-        try{
-            $currentTime = strftime('%H:%M:%S', time());
+        try {
+            $currentTime = Carbon::now()->format('H:i:s');
             $forcedTime = request('forcedTime');
-            if($forcedTime){
+            if ($forcedTime !== null && $forcedTime !== '' && app()->isLocal()) {
                 $currentTime = $forcedTime;
             }
             $workingHours->innout($currentTime);
             $type = 'success';
             $msg = 'Ponto inserido com sucesso!';
-        } catch(AppException $e) {
+        } catch (AppException $e) {
             $type = 'danger';
             $msg = $e->getMessage();
         }

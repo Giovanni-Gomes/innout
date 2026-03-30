@@ -1,11 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Data_Generator;
+use App\Http\Controllers\Admin\ManagerialReportController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\DayRecords;
 use App\Http\Controllers\MonthlyReport;
 use Illuminate\Support\Facades\Route;
-use App\Models\WorkingHours;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -29,13 +29,13 @@ Route::get('/day_records', [DayRecords::class, 'index'])->middleware(['auth'])->
 
 Route::get('point', [DayRecords::class, 'point'])->middleware(['auth']);
 
-Route::get('/monthly_report', [MonthlyReport::class, 'index'])->middleware(['auth']);
+Route::get('/monthly_report', [MonthlyReport::class, 'index'])->middleware(['auth'])->name('monthly_report');
 
-
-Route::get('/data_generator', [Data_Generator::class, 'dataGenerator'])->middleware(['auth']);
 
 Route::middleware(['auth', 'admin'])->name('admin.')->prefix('admin')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('index');
+    Route::resource('users', UserController::class)->except(['show']);
+    Route::get('/managerial_report', [ManagerialReportController::class, 'index'])->name('managerial.index');
 });
 
 require __DIR__.'/auth.php';

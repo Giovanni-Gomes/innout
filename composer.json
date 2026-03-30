@@ -1,11 +1,11 @@
 {
-    "name": "laravel/laravel",
+    "name": "innout/time-tracking",
     "type": "project",
-    "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "description": "Sistema web de registro de ponto e relatórios (Laravel).",
+    "keywords": ["laravel", "time-tracking", "innout", "ponto"],
     "license": "MIT",
     "require": {
-        "php": "^8.0.2",
+        "php": "^8.2",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^9.2",
         "laravel/sanctum": "^2.14.1",
@@ -25,7 +25,11 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/date_utils.php",
+            "app/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
