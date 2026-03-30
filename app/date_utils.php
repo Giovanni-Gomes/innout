@@ -53,6 +53,20 @@ function getLastDayOfMonth($date) {
     return new DateTime(date('Y-m-t', $time));
 }
 
+function countWeekdaysInMonth(string $yearMonth): int {
+    $start = getFirstDayOfMonth($yearMonth);
+    $end = getLastDayOfMonth($yearMonth);
+    $count = 0;
+    $current = clone $start;
+    while ($current <= $end) {
+        if (!isWeekend($current)) {
+            $count++;
+        }
+        $current->modify('+1 day');
+    }
+    return $count;
+}
+
 function getSecondsFromDateInterval($interval) {
     $d1 = new DateTimeImmutable();
     $d2 = $d1->add($interval);
@@ -70,7 +84,9 @@ function getTimeStringFromSeconds($seconds) {
     return sprintf('%02d:%02d:%02d', $h, $m, $s);
 }
 
-function formatDateWithLocale($date, $pattern) {
-    $time = getDateAsDateTime($date)->getTimestamp();
-    return strftime($pattern, $time);
+function formatDateWithLocale($date, ?string $isoPattern = null): string
+{
+    return \Illuminate\Support\Carbon::instance(getDateAsDateTime($date))
+        ->locale(config('app.locale', 'pt_BR'))
+        ->isoFormat($isoPattern ?? 'D [de] MMMM [de] YYYY');
 }

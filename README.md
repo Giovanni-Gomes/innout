@@ -1,64 +1,152 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# InNOut
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema web de registro de ponto e acompanhamento de horas trabalhadas, desenvolvido em Laravel.
 
-## About Laravel
+## Apenas desenvolvimento
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Este projeto está preparado para **portfolio e ambiente local**. Comportamentos que não devem existir em produção sem revisão:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Simulação de horário** no registo de ponto (formulário "Simular Ponto") só aparece e só é aceite pelo servidor quando `APP_ENV=local`. Fora disso, usa-se sempre a hora real do servidor.
+- **Dados fictícios** de batidas: não há rota web; use apenas o comando Artisan abaixo. Ele **remove todos os registos** da tabela `working_hours` e gera histórico de exemplo para cada utilizador **não administrador**. Exige `APP_ENV=local`.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```powershell
+php artisan innout:demo-data
+```
 
-## Learning Laravel
+- Para qualquer deploy real: altere palavras-passe predefinidas, use `APP_DEBUG=false`, HTTPS e políticas de segurança adequadas.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Funcionalidades
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- Autenticacao com Laravel Breeze
+- Registro de pontos diarios (`entrada/saida`)
+- Relatorio mensal por usuario
+- Area administrativa (`/admin`)
+- Seeder com utilizador administrador e funcionário de demonstração
 
-## Laravel Sponsors
+## Stack
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+- PHP 8.2
+- Laravel 9.52
+- Composer 2
+- Node.js + npm
+- Laravel Mix 6 + Tailwind CSS
+- MySQL 8 (desenvolvimento local com **XAMPP** ou **Docker Compose**)
 
-### Premium Partners
+## Requisitos
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+- PHP 8.2+ com extensoes comuns do Laravel (`pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `zip`)
+- Composer
+- Node.js (recomendado >= 18)
+- npm
+- **MySQL** acessivel (via XAMPP ou container do Compose)
+- Para a opcao Docker: [Docker](https://docs.docker.com/get-docker/) e Docker Compose v2
 
-## Contributing
+## Como rodar
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Passos comuns (dependencias e ambiente)
 
-## Code of Conduct
+1. Instalar dependencias PHP
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```powershell
+composer install
+```
 
-## Security Vulnerabilities
+2. Instalar dependencias front-end
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```powershell
+npm install
+```
 
-## License
+3. Criar arquivo de ambiente
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```powershell
+Copy-Item .env.example .env
+```
+
+---
+
+### Opcao A: PHP na maquina + MySQL do XAMPP
+
+1. No XAMPP, inicie o **MySQL** e crie um banco (por exemplo `innout`) no phpMyAdmin ou cliente MySQL.
+
+2. Ajuste o `.env` para apontar para o MySQL local (exemplo tipico do XAMPP; a senha do `root` pode ser vazia ou a que voce definiu):
+
+```env
+APP_NAME=InNOut
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=innout
+DB_USERNAME=root
+DB_PASSWORD=
+CACHE_DRIVER=file
+SESSION_DRIVER=file
+QUEUE_CONNECTION=sync
+MAIL_MAILER=log
+```
+
+3. Gerar chave da aplicacao e preparar o banco:
+
+```powershell
+php artisan key:generate
+php artisan migrate --seed --force
+```
+
+4. Compilar assets e subir o servidor:
+
+```powershell
+npm run dev
+php artisan serve --host=127.0.0.1 --port=8000
+```
+
+Acesse: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+---
+
+### Opcao B: Docker Compose (app + MySQL)
+
+O ficheiro `docker-compose.yml` sobe o MySQL 8 e a aplicacao Laravel num container `app`, com variaveis de base de dados ja alinhadas (`DB_HOST=mysql`, base `innout`, utilizador `root`, palavra-passe `secret` — igual ao definido no servico MySQL).
+
+Na raiz do projeto:
+
+```powershell
+docker compose up --build
+```
+
+- A aplicacao fica em [http://localhost:8000](http://localhost:8000)
+- O entrypoint do container executa `migrate` ao arranque. Para popular o utilizador administrador (seeder), num segundo terminal:
+
+```powershell
+docker compose exec app php artisan db:seed --force
+```
+
+Para gerar batidas fictícias (só com `APP_ENV=local` no container):
+
+```powershell
+docker compose exec app php artisan innout:demo-data
+```
+
+Para alterar CSS/JS, continue a usar `npm run dev` na sua maquina (as dependencias Node nao estao na imagem Docker).
+
+Se correr o PHP localmente mas quiser so o MySQL no Docker, use `DB_HOST=127.0.0.1` e `DB_PASSWORD=secret` no `.env`, com a porta `3306` exposta pelo Compose.
+
+## Credenciais iniciais
+
+Após `php artisan migrate --seed`:
+
+- **Administrador** — email: `admin@cod3r.com.br`, senha: `password`
+- **Funcionário (demo)** — email: `funcionario@cod3r.com.br`, senha: `password`
+
+## Comandos uteis
+
+```powershell
+php artisan config:clear
+php artisan route:list
+php artisan migrate:fresh --seed
+php artisan innout:demo-data
+```
+
+## Observacoes
+
+- Se o Composer mostrar aviso relacionado a `zip`, habilite `extension=zip` no `php.ini`.
+- Com Docker, detalhes sobre `DB_HOST` e cache de configuracao estao comentados no `.env.example`.

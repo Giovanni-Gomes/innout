@@ -20,7 +20,6 @@ class User extends Authenticatable
 
     protected static $tableName = 'users';
     protected $fillable = [
-        'id',
         'name',
         'password',
         'email',
@@ -46,5 +45,18 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_admin' => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
+
+    public function workingHours()
+    {
+        return $this->hasMany(WorkingHours::class);
+    }
+
+    public function scopeEmployees($query)
+    {
+        return $query->where('is_admin', false);
+    }
 }

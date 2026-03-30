@@ -8,14 +8,12 @@ use App\Exceptions\AppException;
 use DateInterval;
 use DateTime;
 use DateTimeImmutable;
-
 class WorkingHours extends Model
 {
     use HasFactory;
 
-    protected static $tableName = 'working_hours';
+    protected $table = 'working_hours';
     protected $fillable = [
-        'id',
         'user_id',
         'work_date',
         'time1',
@@ -24,6 +22,20 @@ class WorkingHours extends Model
         'time4',
         'worked_time'
     ];
+
+    protected $casts = [
+        'work_date' => 'date',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public static function dailyWorkSeconds(): int
+    {
+        return (int) config('innout.daily_work_seconds', 60 * 60 * 8);
+    }
 
     public static function loadFromUserAndDate($userId, $workDate) {
         $registry = WorkingHours::firstOrNew(
@@ -95,7 +107,7 @@ class WorkingHours extends Model
 
     function getExitTime() {
         [$t1,,, $t4] = $this->getTimes();
-        $workDay = DateInterval::createFromDateString('8 hours');
+        $workDay = DateInterval::createFromDateString(static::dailyWorkSeconds().' seconds');
 
         if(!$t1) {
             return (new DateTimeImmutable())->add($workDay);
@@ -108,56 +120,69 @@ class WorkingHours extends Model
     }
 
     function getBalance() {
-        if(!$this->time1 && !isPastWorkDay($this->work_date)) return '';
-        if($this->worked_time == DAILY_TIME) return '-';
+        $daily = static::dailyWorkSeconds();
+        if(!$this->time1 && !isPastWorkday($this->work_date)) return '';
+        if((int) $this->worked_time === $daily) return '-';
 
-        $balance = $this->worked_time - DAILY_TIME;
-        $balanceString =  getTimeStringFromSeconds(abs($balance));
-        $sign = $this->worked_time >= DAILY_TIME ? '+' : '-';
+        $balance = (int) $this->worked_time - $daily;
+        $balanceString = getTimeStringFromSeconds(abs($balance));
+        $sign = (int) $this->worked_time >= $daily ? '+' : '-';
         return "{$sign}{$balanceString}";
     }
 
-    public static function getAbsentUsers() {
-        $today = new DateTime();
-        $result = Database::getResultFromQuery("
-            SELECT name FROM users WHERE end_date IS NULL AND id NOT IN (
-                SELECT user_id FROM working_hours WHERE work_date = '{$today->format('Y-m-d')}' AND time1 IS NOT NULL
-            )
-        ");
+    /**
+     * Nomes de utilizadores ativos (não admin) sem batimento no dia indicado.
+     *
+     * @return array<int, string>
+     */
+    public static function getAbsentUserNames(?string $workDate = null): array
+    {
+        $date = $workDate ?? (new DateTime())->format('Y-m-d');
 
-        $absentUsers = [];
-        if($result->num_rows > 0) {
-            while($row = $result->fetch_assoc()) {
-                array_push($absentUsers, $row['name']);
-            }
-        }
-
-        return $absentUsers;
+        return User::query()
+            ->employees()
+            ->whereNull('end_date')
+            ->whereNotIn('id', function ($q) use ($date) {
+                $q->select('user_id')
+                    ->from('working_hours')
+                    ->where('work_date', $date)
+                    ->whereNotNull('time1');
+            })
+            ->orderBy('name')
+            ->pluck('name')
+            ->all();
     }
 
-    public static function getWorkedTimeInMonth($yearAndMonth) {
+    public static function getWorkedTimeInMonth(int $userId, string $yearAndMonth): int
+    {
         $startDate = (new DateTime("{$yearAndMonth}-1"))->format('Y-m-d');
         $endDate = getLastDayOfMonth($yearAndMonth)->format('Y-m-d');
-        $result = static::getResultSetFromSelect([
-            'raw' => "work_date BETWEEN '{$startDate}' AND '{$endDate}'"
-        ], "sum(worked_time) as sum");
-        return $result->fetch_assoc()['sum'];
+
+        return (int) static::query()
+            ->where('user_id', $userId)
+            ->whereBetween('work_date', [$startDate, $endDate])
+            ->sum('worked_time');
     }
 
-    public static function getMonthlyReport($userId, $date) {
-        $registries = [];
+    /**
+     * Registos do mês indexados por data (Y-m-d).
+     *
+     * @return array<string, WorkingHours>
+     */
+    public static function getMonthlyReport(int $userId, $date): array
+    {
         $startDate = getFirstDayOfMonth($date)->format('Y-m-d');
         $endDate = getLastDayOfMonth($date)->format('Y-m-d');
 
-        $result = static::getResultSetFromSelect([
-            'user_id' => $userId,
-            'raw' => "work_date between '{$startDate}' AND  '{$endDate}'"
-        ]);
+        $rows = static::query()
+            ->where('user_id', $userId)
+            ->whereBetween('work_date', [$startDate, $endDate])
+            ->orderBy('work_date')
+            ->get();
 
-        if($result) {
-            while($row = $result->fetch_assoc()) {
-                $registries[$row['work_date']] = new WorkingHours($row);
-            }
+        $registries = [];
+        foreach ($rows as $row) {
+            $registries[$row->work_date->format('Y-m-d')] = $row;
         }
 
         return $registries;
