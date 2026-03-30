@@ -107,7 +107,7 @@ class WorkingHours extends Model
 
     function getExitTime() {
         [$t1,,, $t4] = $this->getTimes();
-        $workDay = DateInterval::createFromDateString('8 hours');
+        $workDay = DateInterval::createFromDateString(static::dailyWorkSeconds().' seconds');
 
         if(!$t1) {
             return (new DateTimeImmutable())->add($workDay);
